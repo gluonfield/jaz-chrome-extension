@@ -25,10 +25,14 @@ The extension connects to a local WebSocket bridge, defaulting to:
 ws://127.0.0.1:5299/v1/browser/extension
 ```
 
-If the Jaz backend requires auth, set the popup bridge URL to:
+For a local desktop Jaz backend, do not add a key. Jaz accepts the default URL
+only from loopback Chrome-extension WebSocket origins.
+
+For a remote backend or old Jaz build that still requires explicit auth, set the
+popup bridge URL to an authenticated `wss://` or `ws://` bridge URL:
 
 ```txt
-ws://127.0.0.1:5299/v1/browser/extension?key=<backend-key>
+wss://jaz.example.com/v1/browser/extension?key=<backend-key>
 ```
 
 On connect it sends:
