@@ -1,6 +1,6 @@
 # Jaz Chrome Extension
 
-Chrome MV3 extension for letting Jaz browser workers operate the user's real signed-in browser.
+Chrome MV3 side-panel extension for letting Jaz browser workers operate the user's real signed-in browser.
 
 ## Build
 
@@ -10,6 +10,7 @@ npm run build
 ```
 
 Load `dist/` in Chrome using `chrome://extensions`, Developer mode, Load unpacked.
+Click the Jaz extension icon to open the side panel.
 
 ## Contract
 
@@ -26,10 +27,11 @@ ws://127.0.0.1:5299/v1/browser/extension
 ```
 
 For a local desktop Jaz backend, do not add a key. Jaz accepts the default URL
-only from loopback Chrome-extension WebSocket origins.
+only from loopback Chrome-extension WebSocket origins. The side panel stores the
+endpoint in Chrome local storage as typed.
 
 For a remote backend or old Jaz build that still requires explicit auth, set the
-popup bridge URL to an authenticated `wss://` or `ws://` bridge URL:
+side-panel endpoint to an authenticated `wss://` or `ws://` bridge URL:
 
 ```txt
 wss://jaz.example.com/v1/browser/extension?key=<backend-key>

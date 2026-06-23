@@ -7,8 +7,8 @@ import { spawnSync } from "node:child_process";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  await validate(join(root, "src"));
-  console.log("Extension sources are valid.");
+  await validate(join(root, "dist"));
+  console.log("Extension build is valid.");
 }
 
 export async function validate(dir) {
@@ -17,10 +17,11 @@ export async function validate(dir) {
   assert(manifest.manifest_version === 3, "manifest_version must be 3");
   assert(manifest.name === "Jaz Browser Bridge", "unexpected extension name");
   assert(manifest.background?.service_worker, "background service worker is required");
-  assert(manifest.action?.default_popup, "popup is required");
+  assert(!manifest.action?.default_popup, "extension action must open the side panel, not a popup");
+  assert(manifest.side_panel?.default_path === "sidepanel.html", "side panel path is required");
   await validateIcons(dir, manifest);
   assert(Array.isArray(manifest.permissions), "permissions must be an array");
-  ["storage", "tabs", "scripting", "webNavigation"].forEach((permission) => {
+  ["storage", "tabs", "scripting", "webNavigation", "sidePanel"].forEach((permission) => {
     assert(manifest.permissions.includes(permission), `missing ${permission} permission`);
   });
   const [contentScript] = manifest.content_scripts || [];
@@ -28,16 +29,16 @@ export async function validate(dir) {
   assert(contentScript?.match_about_blank === true, "content script must match about:blank frames");
   const files = [
     manifest.background.service_worker,
-    manifest.action.default_popup,
+    manifest.side_panel.default_path,
     "browser-extension-contract.json",
     "browser_actions.js",
     "chrome_async.js",
-    "popup.css",
-    "popup.js",
+    "sidepanel.css",
+    "sidepanel.js",
     "content.js"
   ];
   for (const file of files) await mustExist(join(dir, file));
-  for (const file of ["background.js", "browser_actions.js", "chrome_async.js", "content.js", "popup.js"]) nodeCheck(join(dir, file));
+  for (const file of ["background.js", "browser_actions.js", "chrome_async.js", "content.js", "sidepanel.js"]) nodeCheck(join(dir, file));
   await validateContract(dir);
 }
 

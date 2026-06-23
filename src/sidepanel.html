@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jaz Browser Bridge</title>
+    <link rel="stylesheet" href="sidepanel.css">
+  </head>
+  <body>
+    <main class="panel-shell">
+      <header class="panel-header">
+        <div class="brand">
+          <img src="icons/icon32.png" width="32" height="32" alt="" class="brand-icon">
+          <div class="brand-copy">
+            <h1>Jaz Browser</h1>
+            <p>Chrome profile bridge</p>
+          </div>
+        </div>
+        <span id="state" class="status-pill">Checking</span>
+      </header>
+
+      <section class="surface endpoint-surface">
+        <div class="surface-heading">
+          <div>
+            <h2>Endpoint</h2>
+            <p>Stored locally in Chrome</p>
+          </div>
+          <button id="reset-endpoint" type="button" class="ghost-button">Default</button>
+        </div>
+        <label class="endpoint-field">
+          <span>Bridge URL</span>
+          <textarea
+            id="bridge-url"
+            rows="2"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="ws://127.0.0.1:5299/v1/browser/extension"
+          ></textarea>
+        </label>
+        <label class="switch-row">
+          <span class="switch-copy">
+            <span>Auto-connect</span>
+            <small>Reconnect when Chrome wakes the extension</small>
+          </span>
+          <input id="auto-connect" type="checkbox">
+        </label>
+      </section>
+
+      <section class="surface status-surface">
+        <div class="surface-heading">
+          <div>
+            <h2>Connection</h2>
+            <p id="connection-copy">Waiting for status</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="primary-action" type="button" class="primary-button">Connect</button>
+          <button id="secondary-action" type="button" class="ghost-button">Refresh</button>
+        </div>
+        <dl class="details">
+          <div>
+            <dt>Last connected</dt>
+            <dd id="last-connected">never</dd>
+          </div>
+          <div>
+            <dt>Last error</dt>
+            <dd id="last-error">none</dd>
+          </div>
+        </dl>
+      </section>
+    </main>
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

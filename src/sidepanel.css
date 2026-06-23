@@ -1,0 +1,315 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: light;
+  --bg: oklch(0.963 0.007 262);
+  --surface: oklch(0.94 0.009 262);
+  --surface-2: oklch(0.906 0.011 262);
+  --ink: oklch(0.27 0.01 262);
+  --ink-2: oklch(0.5 0.01 262);
+  --ink-3: oklch(0.57 0.01 262);
+  --primary: oklch(0.5 0.13 262);
+  --primary-strong: oklch(0.43 0.13 262);
+  --primary-soft: oklch(0.92 0.035 262);
+  --on-primary: oklch(1 0 0);
+  --ok: oklch(0.45 0.14 145);
+  --danger: oklch(0.55 0.19 25);
+  --danger-soft: oklch(0.95 0.025 25);
+  --border: oklch(0.853 0.01 262);
+  --shadow-raised:
+    0 1px 2px rgba(18, 20, 30, 0.05),
+    0 12px 30px -8px rgba(18, 20, 30, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: oklch(0.208 0.007 262);
+    --surface: oklch(0.248 0.008 262);
+    --surface-2: oklch(0.298 0.009 262);
+    --ink: oklch(0.945 0.004 262);
+    --ink-2: oklch(0.76 0.006 262);
+    --ink-3: oklch(0.62 0.007 262);
+    --primary: oklch(0.79 0.11 262);
+    --primary-strong: oklch(0.85 0.11 262);
+    --primary-soft: oklch(0.35 0.05 262);
+    --on-primary: oklch(0.21 0.03 262);
+    --ok: oklch(0.72 0.14 145);
+    --danger: oklch(0.68 0.18 25);
+    --danger-soft: oklch(0.32 0.07 25);
+    --border: oklch(0.325 0.009 262);
+    --shadow-raised: 0 18px 46px rgba(0, 0, 0, 0.18);
+  }
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--ink);
+  background: var(--bg);
+  font: 13px/1.45 "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.panel-shell {
+  min-height: 100vh;
+  padding: 14px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-icon {
+  flex: 0 0 auto;
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 8px 22px rgba(16, 24, 32, 0.16);
+}
+
+.brand-copy {
+  min-width: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.brand-copy p,
+.surface-heading p {
+  margin: 1px 0 0;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.surface {
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.endpoint-surface,
+.status-surface {
+  padding: 12px;
+}
+
+.status-surface {
+  margin-top: 10px;
+}
+
+.surface-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.endpoint-field {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 560;
+}
+
+textarea {
+  width: 100%;
+  min-height: 62px;
+  resize: vertical;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  outline: none;
+  overflow-wrap: anywhere;
+  transition-property: box-shadow, background-color;
+  transition-duration: 150ms;
+}
+
+textarea:focus {
+  background: var(--bg);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 34%, transparent);
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  margin-top: 10px;
+  color: var(--ink);
+}
+
+.switch-copy {
+  display: grid;
+  gap: 1px;
+}
+
+.switch-copy small {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ink) 20%, transparent);
+  outline: none;
+  transition-property: background-color;
+  transition-duration: 150ms;
+}
+
+input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ink) 60%, transparent);
+  transition-property: left, background-color;
+  transition-duration: 150ms;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--primary);
+}
+
+input[type="checkbox"]:checked::after {
+  left: 18px;
+  background: var(--on-primary);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition-property: background-color, color, transform, opacity;
+  transition-duration: 150ms, 150ms, 80ms, 150ms;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+.primary-button {
+  flex: 1;
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--primary-strong);
+}
+
+.primary-button.disconnect {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.ghost-button {
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.ghost-button:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.status-pill {
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-pill.connected {
+  background: var(--primary-soft);
+  color: var(--ink);
+}
+
+.status-pill.disconnected {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.details {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.details div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+}
+
+dt,
+dd {
+  margin: 0;
+  min-width: 0;
+}
+
+dt {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+dd {
+  color: var(--ink-2);
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-wrap: anywhere;
+}
