@@ -18,6 +18,7 @@ export async function validate(dir) {
   assert(manifest.name === "Jaz Browser Bridge", "unexpected extension name");
   assert(manifest.background?.service_worker, "background service worker is required");
   assert(manifest.action?.default_popup, "popup is required");
+  await validateIcons(dir, manifest);
   assert(Array.isArray(manifest.permissions), "permissions must be an array");
   ["storage", "tabs", "scripting", "webNavigation"].forEach((permission) => {
     assert(manifest.permissions.includes(permission), `missing ${permission} permission`);
@@ -48,6 +49,18 @@ function nodeCheck(path) {
   const result = spawnSync(process.execPath, ["--check", path], { encoding: "utf8" });
   if (result.status !== 0) {
     throw new Error(`${path} failed syntax check:\n${result.stderr || result.stdout}`);
+  }
+}
+
+async function validateIcons(dir, manifest) {
+  for (const size of [16, 32, 48, 128]) {
+    const path = `icons/icon${size}.png`;
+    assert(manifest.icons?.[size] === path, `missing ${size}px manifest icon`);
+    assert(manifest.action?.default_icon?.[size] === path, `missing ${size}px action icon`);
+    const png = await readFile(join(dir, path));
+    const width = png.readUInt32BE(16);
+    const height = png.readUInt32BE(20);
+    assert(width === size && height === size, `${path} must be ${size}x${size}`);
   }
 }
 

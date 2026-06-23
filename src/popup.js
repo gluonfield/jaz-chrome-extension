@@ -7,11 +7,18 @@ const details = document.getElementById("details");
 const connectButton = document.getElementById("connect");
 const disconnectButton = document.getElementById("disconnect");
 let refreshTimer;
+let bridgeURLDirty = false;
 
 connectButton.addEventListener("click", () => connect());
 disconnectButton.addEventListener("click", () => disconnect());
 autoConnect.addEventListener("change", () => saveSettings());
+bridgeURL.addEventListener("input", () => {
+  bridgeURLDirty = true;
+});
 bridgeURL.addEventListener("change", () => saveSettings());
+bridgeURL.addEventListener("blur", () => {
+  bridgeURLDirty = false;
+});
 
 init();
 
@@ -26,6 +33,7 @@ async function init() {
 async function connect() {
   await saveSettings();
   const response = await runtimeMessage({ type: "connect", bridge_url: bridgeURL.value });
+  bridgeURLDirty = false;
   render(response);
 }
 
@@ -35,11 +43,13 @@ async function disconnect() {
 }
 
 async function saveSettings() {
-  await runtimeMessage({
+  const response = await runtimeMessage({
     type: "save_settings",
     bridge_url: bridgeURL.value,
     auto_connect: autoConnect.checked
   });
+  if (response?.ok) bridgeURLDirty = false;
+  return response;
 }
 
 async function refresh() {
@@ -57,7 +67,7 @@ function render(response) {
   }
   const payload = response && response.status ? response.status : {};
   const connected = Boolean(payload.connected);
-  if (payload.bridge_url) bridgeURL.value = payload.bridge_url;
+  if (payload.bridge_url && !isEditingBridgeURL()) bridgeURL.value = payload.bridge_url;
   state.textContent = connected ? "Connected" : "Disconnected";
   state.classList.toggle("connected", connected);
   state.classList.toggle("disconnected", !connected);
@@ -67,6 +77,10 @@ function render(response) {
     payload.last_connected_at ? `Last connected: ${payload.last_connected_at}` : "",
     payload.last_error ? `Last error: ${payload.last_error}` : ""
   ].filter(Boolean).join("\n");
+}
+
+function isEditingBridgeURL() {
+  return bridgeURLDirty || document.activeElement === bridgeURL;
 }
 
 function storageGet(defaults) {
