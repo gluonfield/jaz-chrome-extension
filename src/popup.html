@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jaz Browser Bridge</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Jaz Browser Bridge</h1>
+        <span id="state" class="pill">Checking</span>
+      </header>
+      <label>
+        Bridge URL
+        <input id="bridge-url" type="text" spellcheck="false" placeholder="ws://127.0.0.1:5299/v1/browser/extension">
+      </label>
+      <label class="row">
+        <input id="auto-connect" type="checkbox">
+        <span>Connect on Chrome startup</span>
+      </label>
+      <div class="buttons">
+        <button id="connect" type="button">Connect</button>
+        <button id="disconnect" type="button">Disconnect</button>
+      </div>
+      <pre id="details"></pre>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

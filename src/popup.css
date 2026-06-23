@@ -1,0 +1,122 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 360px;
+  color: #171717;
+  background: #f7f7f5;
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  padding: 14px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+  font-weight: 550;
+}
+
+input[type="text"] {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #c9c9c3;
+  border-radius: 6px;
+  padding: 8px 9px;
+  background: #fff;
+  color: #111;
+  font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.row {
+  grid-template-columns: 16px 1fr;
+  align-items: center;
+  font-weight: 450;
+  min-height: 40px;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+button {
+  min-height: 40px;
+  border: 1px solid #b9b9b0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fff;
+  color: #161616;
+  font-weight: 600;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 80ms ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+button:first-child {
+  border-color: #275f45;
+  background: #1f6b4a;
+  color: #fff;
+}
+
+.pill {
+  border: 1px solid #c9c9c3;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #fff;
+  color: #555;
+  font-size: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pill.connected {
+  border-color: #5aa078;
+  background: #e7f5ed;
+  color: #236044;
+}
+
+.pill.disconnected {
+  border-color: #c99b8a;
+  background: #fbede7;
+  color: #8a3d24;
+}
+
+pre {
+  margin: 12px 0 0;
+  min-height: 72px;
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid #d9d9d2;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fff;
+  color: #333;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
