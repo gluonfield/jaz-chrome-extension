@@ -107,11 +107,13 @@ h1 {
 }
 
 .endpoint-surface,
-.status-surface {
+.status-surface,
+.history-surface {
   padding: 12px;
 }
 
-.status-surface {
+.status-surface,
+.history-surface {
   margin-top: 10px;
 }
 
@@ -312,4 +314,77 @@ dd {
   color: var(--ink-2);
   font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
   overflow-wrap: anywhere;
+}
+
+.history-list {
+  display: grid;
+  gap: 8px;
+  max-height: 320px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.history-item {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px 9px 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: inset 3px 0 0 var(--ok);
+}
+
+.history-item.error {
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.history-action {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-head time {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+  font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.history-target,
+.history-summary,
+.history-empty {
+  min-width: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.history-target {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.history-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.history-empty {
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bg);
 }

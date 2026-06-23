@@ -1,5 +1,6 @@
 import { ACTIONS, DEFAULT_BRIDGE_URL, PROTOCOL, callBrowser, type BridgeStatus } from "./browser_actions.js";
 import { chromePromise, errorMessage } from "./chrome_async.js";
+import { ACTION_HISTORY_KEY, ACTION_HISTORY_LIMIT, type ActionHistoryEntry } from "./history.js";
 
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 15000;
@@ -84,7 +85,12 @@ async function handleRuntimeMessage(message: RuntimeMessage): Promise<Record<str
   if (!message || typeof message !== "object") return { ok: false, error: "invalid message" };
   switch (message.type) {
     case "status":
-      return { ok: true, status };
+      return { ok: true, status, history: await actionHistory() };
+    case "history":
+      return { ok: true, history: await actionHistory() };
+    case "clear_history":
+      await storageSet({ [ACTION_HISTORY_KEY]: [] });
+      return { ok: true, history: [] };
     case "connect":
       manualDisconnect = false;
       await connect(String(message.bridge_url || DEFAULT_BRIDGE_URL));
@@ -182,9 +188,12 @@ async function handleBridgeMessage(raw: unknown): Promise<void> {
   }
   try {
     const output = await callBrowser(message, status);
+    void recordAction(message, "ok", output.text || output.status || "done").catch(() => undefined);
     send({ id: message.id, type: "result", ok: true, output });
   } catch (error) {
-    send({ id: message.id, type: "result", ok: false, error: errorMessage(error) });
+    const messageText = errorMessage(error);
+    void recordAction(message, "error", messageText).catch(() => undefined);
+    send({ id: message.id, type: "result", ok: false, error: messageText });
   }
 }
 
@@ -212,11 +221,62 @@ function defaultSettings(): ExtensionSettings {
   return { bridge_url: DEFAULT_BRIDGE_URL, auto_connect: true };
 }
 
-function storageSet(values: ExtensionSettings): Promise<void> {
+function storageSet(values: Record<string, unknown>): Promise<void> {
   return chromePromise(chrome.storage.local.set, values);
 }
 
 function recordError(error: unknown): void {
   status.connected = false;
   status.last_error = errorMessage(error);
+}
+
+async function recordAction(input: BridgeCall, result: "ok" | "error", summary: string): Promise<void> {
+  const history = await actionHistory();
+  const entry: ActionHistoryEntry = {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    at: new Date().toISOString(),
+    action: String(input.action || "unknown"),
+    session: String(input.session || "default"),
+    target: actionTarget(input),
+    result,
+    summary: oneLine(summary, 180)
+  };
+  await storageSet({ [ACTION_HISTORY_KEY]: [entry, ...history].slice(0, ACTION_HISTORY_LIMIT) });
+}
+
+async function actionHistory(): Promise<ActionHistoryEntry[]> {
+  const stored = await chromePromise<Record<string, unknown>>(chrome.storage.local.get, { [ACTION_HISTORY_KEY]: [] });
+  const raw = stored[ACTION_HISTORY_KEY];
+  return Array.isArray(raw) ? raw.filter(isHistoryEntry).slice(0, ACTION_HISTORY_LIMIT) : [];
+}
+
+function isHistoryEntry(value: unknown): value is ActionHistoryEntry {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.id === "string" &&
+    typeof item.at === "string" &&
+    typeof item.action === "string" &&
+    typeof item.session === "string" &&
+    typeof item.target === "string" &&
+    typeof item.summary === "string" &&
+    (item.result === "ok" || item.result === "error")
+  );
+}
+
+function actionTarget(input: BridgeCall): string {
+  const action = String(input.action || "");
+  if (action === "navigate") return oneLine(input.url || "", 120);
+  if (action === "press") return oneLine(input.key || "", 80);
+  if (action === "type" || action === "fill" || action === "select") {
+    const where = oneLine(input.selector || "", 80);
+    const chars = typeof input.text === "string" ? input.text.length : 0;
+    return where ? `${where} (${chars} chars)` : `${chars} chars`;
+  }
+  return oneLine(input.selector || input.text || "", 120);
+}
+
+function oneLine(value: unknown, limit: number): string {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  return text.length > limit ? `${text.slice(0, limit - 1).trim()}…` : text;
 }

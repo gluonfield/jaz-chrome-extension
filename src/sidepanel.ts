@@ -1,5 +1,6 @@
 import { DEFAULT_BRIDGE_URL, type BridgeStatus } from "./browser_actions.js";
 import { chromePromise, errorMessage } from "./chrome_async.js";
+import type { ActionHistoryEntry } from "./history.js";
 
 type Settings = {
   bridge_url: string;
@@ -10,6 +11,7 @@ type RuntimeResponse = {
   ok?: boolean;
   error?: string;
   status?: BridgeStatus;
+  history?: ActionHistoryEntry[];
 };
 
 const bridgeURL = mustElement<HTMLTextAreaElement>("bridge-url");
@@ -21,6 +23,9 @@ const lastError = mustElement<HTMLElement>("last-error");
 const primaryAction = mustElement<HTMLButtonElement>("primary-action");
 const secondaryAction = mustElement<HTMLButtonElement>("secondary-action");
 const resetEndpoint = mustElement<HTMLButtonElement>("reset-endpoint");
+const clearHistory = mustElement<HTMLButtonElement>("clear-history");
+const historyCount = mustElement<HTMLElement>("history-count");
+const historyList = mustElement<HTMLOListElement>("history-list");
 
 let refreshTimer: number | undefined;
 let savingTimer: number | undefined;
@@ -31,6 +36,7 @@ primaryAction.addEventListener("click", () => {
   else void connect();
 });
 secondaryAction.addEventListener("click", () => void refresh());
+clearHistory.addEventListener("click", () => void clearActionHistory());
 resetEndpoint.addEventListener("click", () => {
   bridgeURL.value = DEFAULT_BRIDGE_URL;
   void saveSettingsNow();
@@ -90,14 +96,17 @@ function render(response: RuntimeResponse): void {
     setConnected(false);
     lastError.textContent = response.error;
     connectionCopy.textContent = "Extension bridge error";
+    if (response.history) renderHistory(response.history);
     return;
   }
 
-  const status = response.status ?? { connected: false };
-  setConnected(Boolean(status.connected));
-  lastConnected.textContent = formatTime(status.last_connected_at);
-  lastError.textContent = status.last_error || "none";
-  connectionCopy.textContent = connected ? "Signed-in browser is available" : "Bridge is not connected";
+  if (response.status) {
+    setConnected(Boolean(response.status.connected));
+    lastConnected.textContent = formatTime(response.status.last_connected_at);
+    lastError.textContent = response.status.last_error || "none";
+    connectionCopy.textContent = connected ? "Signed-in browser is available" : "Bridge is not connected";
+  }
+  if (response.history) renderHistory(response.history);
 }
 
 function setConnected(next: boolean): void {
@@ -119,6 +128,62 @@ function formatTime(value?: string): string {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+async function clearActionHistory(): Promise<void> {
+  clearHistory.disabled = true;
+  try {
+    render(await runtimeMessage({ type: "clear_history" }));
+  } finally {
+    clearHistory.disabled = false;
+  }
+}
+
+function renderHistory(history: ActionHistoryEntry[]): void {
+  historyList.replaceChildren();
+  historyCount.textContent = String(history.length);
+  if (!history.length) {
+    const empty = document.createElement("li");
+    empty.className = "history-empty";
+    empty.textContent = "No browser actions yet";
+    historyList.append(empty);
+    return;
+  }
+  history.slice(0, 20).forEach((entry) => historyList.append(historyItem(entry)));
+}
+
+function historyItem(entry: ActionHistoryEntry): HTMLLIElement {
+  const item = document.createElement("li");
+  item.className = `history-item ${entry.result}`;
+
+  const head = document.createElement("div");
+  head.className = "history-head";
+
+  const action = document.createElement("span");
+  action.className = "history-action";
+  action.textContent = entry.action;
+
+  const time = document.createElement("time");
+  time.dateTime = entry.at;
+  time.textContent = formatClock(entry.at);
+
+  const target = document.createElement("div");
+  target.className = "history-target";
+  target.textContent = entry.target || entry.session;
+
+  const summary = document.createElement("div");
+  summary.className = "history-summary";
+  summary.textContent = entry.summary || entry.result;
+
+  head.append(action, time);
+  item.append(head, target, summary);
+  return item;
+}
+
+function formatClock(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 function mustElement<T extends HTMLElement>(id: string): T {
