@@ -1,7 +1,6 @@
-import { ACTIONS, DEFAULT_BRIDGE_URL, callBrowser } from "./browser_actions.js";
+import { ACTIONS, DEFAULT_BRIDGE_URL, PROTOCOL, callBrowser } from "./browser_actions.js";
 import { chromePromise, errorMessage } from "./chrome_async.js";
 
-const PROTOCOL = "jaz.browser.extension.v1";
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 15000;
 

@@ -1,6 +1,7 @@
 import { chromePromise, delay, errorMessage } from "./chrome_async.js";
 
 export const DEFAULT_BRIDGE_URL = "ws://127.0.0.1:5299/v1/browser/extension";
+export const PROTOCOL = "jaz.browser.extension.v1";
 
 const DEFAULT_SESSION = "default";
 const POPUP_WAIT_MS = 1200;

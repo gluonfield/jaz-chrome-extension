@@ -1,7 +1,7 @@
 import { access, readFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -28,6 +28,7 @@ export async function validate(dir) {
   const files = [
     manifest.background.service_worker,
     manifest.action.default_popup,
+    "browser-extension-contract.json",
     "browser_actions.js",
     "chrome_async.js",
     "popup.css",
@@ -36,6 +37,7 @@ export async function validate(dir) {
   ];
   for (const file of files) await mustExist(join(dir, file));
   for (const file of ["background.js", "browser_actions.js", "chrome_async.js", "content.js", "popup.js"]) nodeCheck(join(dir, file));
+  await validateContract(dir);
 }
 
 async function mustExist(path) {
@@ -47,6 +49,14 @@ function nodeCheck(path) {
   if (result.status !== 0) {
     throw new Error(`${path} failed syntax check:\n${result.stderr || result.stdout}`);
   }
+}
+
+async function validateContract(dir) {
+  const contract = JSON.parse(await readFile(join(dir, "browser-extension-contract.json"), "utf8"));
+  const actions = await import(pathToFileURL(join(dir, "browser_actions.js")).href);
+  assert(contract.protocol === actions.PROTOCOL, "contract protocol must match extension protocol");
+  assert(new URL(actions.DEFAULT_BRIDGE_URL).pathname === contract.bridge_path, "contract bridge path must match default bridge URL");
+  assert(JSON.stringify(contract.actions) === JSON.stringify(actions.ACTIONS), "contract actions must match extension actions");
 }
 
 function assert(value, message) {

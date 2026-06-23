@@ -5,10 +5,17 @@ Chrome MV3 extension for letting Jaz browser workers operate the user's real sig
 ## Build
 
 ```sh
+npm test
 npm run build
 ```
 
 Load `dist/` in Chrome using `chrome://extensions`, Developer mode, Load unpacked.
+
+## Contract
+
+`src/browser-extension-contract.json` is the compatibility contract with Jaz. The
+extension validator checks the exported protocol, default bridge path, and action
+list against it.
 
 ## Bridge Protocol
 
