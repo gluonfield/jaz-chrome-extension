@@ -21,7 +21,7 @@ export async function validate(dir) {
   assert(manifest.side_panel?.default_path === "sidepanel.html", "side panel path is required");
   await validateIcons(dir, manifest);
   assert(Array.isArray(manifest.permissions), "permissions must be an array");
-  ["storage", "tabs", "scripting", "webNavigation", "sidePanel"].forEach((permission) => {
+  ["alarms", "storage", "tabs", "scripting", "webNavigation", "sidePanel"].forEach((permission) => {
     assert(manifest.permissions.includes(permission), `missing ${permission} permission`);
   });
   const [contentScript] = manifest.content_scripts || [];
@@ -39,6 +39,7 @@ export async function validate(dir) {
   ];
   for (const file of files) await mustExist(join(dir, file));
   for (const file of ["background.js", "browser_actions.js", "chrome_async.js", "content.js", "sidepanel.js"]) nodeCheck(join(dir, file));
+  await validateAutoConnectContract(dir);
   await validateContract(dir);
 }
 
@@ -71,6 +72,13 @@ async function validateContract(dir) {
   assert(contract.protocol === actions.PROTOCOL, "contract protocol must match extension protocol");
   assert(new URL(actions.DEFAULT_BRIDGE_URL).pathname === contract.bridge_path, "contract bridge path must match default bridge URL");
   assert(JSON.stringify(contract.actions) === JSON.stringify(actions.ACTIONS), "contract actions must match extension actions");
+}
+
+async function validateAutoConnectContract(dir) {
+  const source = await readFile(join(dir, "background.js"), "utf8");
+  assert(source.includes("chrome.alarms.onAlarm"), "auto-connect must wake from a Chrome alarm");
+  assert(source.includes("chrome.alarms.create"), "auto-connect alarm must be scheduled");
+  assert(source.includes("WebSocket.CONNECTING"), "auto-connect must not reset an in-flight connection");
 }
 
 function assert(value, message) {

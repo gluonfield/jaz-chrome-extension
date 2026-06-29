@@ -4,6 +4,8 @@ import { ACTION_HISTORY_KEY, ACTION_HISTORY_LIMIT, type ActionHistoryEntry } fro
 
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 15000;
+const AUTO_CONNECT_ALARM = "jaz.auto_connect";
+const AUTO_CONNECT_PERIOD_MINUTES = 1;
 
 type ExtensionSettings = {
   bridge_url: string;
@@ -44,21 +46,20 @@ let status: BridgeStatus = {
 
 chrome.runtime.onInstalled.addListener(() => {
   void setSidePanelBehavior();
-  chrome.storage.local.get(defaultSettings(), (items: ExtensionSettings) => {
-    chrome.storage.local.set(items);
-    if (items.auto_connect) void connect(items.bridge_url).catch(recordError);
-  });
+  void ensureStoredSettingsAndAutoConnect().catch(recordError);
 });
 
 chrome.runtime.onStartup.addListener(() => {
   void setSidePanelBehavior();
-  chrome.storage.local.get(defaultSettings(), (items: ExtensionSettings) => {
-    if (items.auto_connect) void connect(items.bridge_url).catch(recordError);
-  });
+  void startAutoConnectFromStorage().catch(recordError);
 });
 
 chrome.action.onClicked.addListener((tab) => {
   if (chrome.sidePanel?.open && tab.windowId !== undefined) void chrome.sidePanel.open({ windowId: tab.windowId });
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === AUTO_CONNECT_ALARM) void startAutoConnectFromStorage().catch(recordError);
 });
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
@@ -70,10 +71,7 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
 
 void setSidePanelBehavior();
 
-chrome.storage.local.get(defaultSettings(), (items: ExtensionSettings) => {
-  status.bridge_url = items.bridge_url;
-  if (items.auto_connect) void connect(items.bridge_url).catch(recordError);
-});
+void startAutoConnectFromStorage().catch(recordError);
 
 async function setSidePanelBehavior(): Promise<void> {
   if (chrome.sidePanel?.setPanelBehavior) {
@@ -101,10 +99,13 @@ async function handleRuntimeMessage(message: RuntimeMessage): Promise<Record<str
       return { ok: true, status };
     case "save_settings":
       const bridgeURL = savedBridgeURL(message.bridge_url);
-      await storageSet({
+      const settings = {
         bridge_url: bridgeURL,
         auto_connect: Boolean(message.auto_connect)
-      });
+      };
+      await storageSet(settings);
+      if (settings.auto_connect) manualDisconnect = false;
+      syncAutoConnectAlarm(settings.auto_connect);
       status.bridge_url = bridgeURL;
       return { ok: true, status };
     default:
@@ -115,7 +116,7 @@ async function handleRuntimeMessage(message: RuntimeMessage): Promise<Record<str
 async function connect(rawURL: unknown): Promise<void> {
   const bridgeURL = normalizeBridgeURL(rawURL);
   status.bridge_url = bridgeURL;
-  if (socket && socket.readyState === WebSocket.OPEN && socket.url === bridgeURL) return;
+  if (socket && socket.url === bridgeURL && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
   disconnect("reconnect");
   manualDisconnect = false;
   socket = new WebSocket(bridgeURL);
@@ -141,9 +142,12 @@ async function connect(rawURL: unknown): Promise<void> {
       send({ type: "error", ok: false, error: errorMessage(error) });
     });
   });
-  socket.addEventListener("close", () => {
+  socket.addEventListener("close", (event) => {
     status.connected = false;
-    if (!manualDisconnect) scheduleReconnect();
+    if (!manualDisconnect && event.reason !== "reconnect") {
+      status.last_error = event.reason || `bridge disconnected (${event.code})`;
+      scheduleReconnect();
+    }
   });
   socket.addEventListener("error", () => {
     status.connected = false;
@@ -170,10 +174,32 @@ function scheduleReconnect(): void {
   reconnectAttempt += 1;
   const delay = Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** Math.min(reconnectAttempt, 4));
   reconnectTimer = self.setTimeout(() => {
-    chrome.storage.local.get(defaultSettings(), (items: ExtensionSettings) => {
-      if (items.auto_connect) void connect(items.bridge_url).catch(recordError);
-    });
+    void startAutoConnectFromStorage().catch(recordError);
   }, delay);
+}
+
+async function ensureStoredSettingsAndAutoConnect(): Promise<void> {
+  const items = await storageGet(defaultSettings());
+  await storageSet({ bridge_url: items.bridge_url, auto_connect: items.auto_connect });
+  await startAutoConnect(items);
+}
+
+async function startAutoConnectFromStorage(): Promise<void> {
+  await startAutoConnect(await storageGet(defaultSettings()));
+}
+
+async function startAutoConnect(settings: ExtensionSettings): Promise<void> {
+  status.bridge_url = settings.bridge_url;
+  syncAutoConnectAlarm(settings.auto_connect);
+  if (settings.auto_connect && !manualDisconnect) await connect(settings.bridge_url);
+}
+
+function syncAutoConnectAlarm(enabled: boolean): void {
+  if (enabled) {
+    chrome.alarms.create(AUTO_CONNECT_ALARM, { periodInMinutes: AUTO_CONNECT_PERIOD_MINUTES });
+  } else {
+    chrome.alarms.clear(AUTO_CONNECT_ALARM);
+  }
 }
 
 async function handleBridgeMessage(raw: unknown): Promise<void> {
@@ -221,8 +247,12 @@ function defaultSettings(): ExtensionSettings {
   return { bridge_url: DEFAULT_BRIDGE_URL, auto_connect: true };
 }
 
+function storageGet(defaults: ExtensionSettings): Promise<ExtensionSettings> {
+  return chromePromise(chrome.storage.local.get.bind(chrome.storage.local), defaults) as Promise<ExtensionSettings>;
+}
+
 function storageSet(values: Record<string, unknown>): Promise<void> {
-  return chromePromise(chrome.storage.local.set, values);
+  return chromePromise(chrome.storage.local.set.bind(chrome.storage.local), values);
 }
 
 function recordError(error: unknown): void {
