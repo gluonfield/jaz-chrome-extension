@@ -6,6 +6,7 @@ const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 15000;
 const AUTO_CONNECT_ALARM = "jaz.auto_connect";
 const AUTO_CONNECT_PERIOD_MINUTES = 1;
+const HEARTBEAT_INTERVAL_MS = 20000;
 
 type ExtensionSettings = {
   bridge_url: string;
@@ -35,6 +36,7 @@ type BridgeMessage = Record<string, unknown>;
 
 let socket: WebSocket | undefined;
 let reconnectTimer: number | undefined;
+let heartbeatTimer: number | undefined;
 let reconnectAttempt = 0;
 let manualDisconnect = false;
 let status: BridgeStatus = {
@@ -136,6 +138,7 @@ async function connect(rawURL: unknown): Promise<void> {
       user_agent: navigator.userAgent,
       capabilities: { actions: ACTIONS }
     });
+    startHeartbeat();
   });
   socket.addEventListener("message", (event) => {
     handleBridgeMessage(event.data).catch((error) => {
@@ -143,6 +146,7 @@ async function connect(rawURL: unknown): Promise<void> {
     });
   });
   socket.addEventListener("close", (event) => {
+    stopHeartbeat();
     status.connected = false;
     if (!manualDisconnect && event.reason !== "reconnect") {
       status.last_error = event.reason || `bridge disconnected (${event.code})`;
@@ -158,6 +162,7 @@ async function connect(rawURL: unknown): Promise<void> {
 function disconnect(reason: string): void {
   clearTimeout(reconnectTimer);
   reconnectTimer = undefined;
+  stopHeartbeat();
   if (socket) {
     try {
       socket.close(1000, reason);
@@ -167,6 +172,18 @@ function disconnect(reason: string): void {
   }
   socket = undefined;
   status.connected = false;
+}
+
+function startHeartbeat(): void {
+  stopHeartbeat();
+  heartbeatTimer = self.setInterval(() => {
+    send({ type: "heartbeat" });
+  }, HEARTBEAT_INTERVAL_MS);
+}
+
+function stopHeartbeat(): void {
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = undefined;
 }
 
 function scheduleReconnect(): void {

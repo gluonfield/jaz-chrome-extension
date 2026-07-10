@@ -79,6 +79,8 @@ async function validateAutoConnectContract(dir) {
   assert(source.includes("chrome.alarms.onAlarm"), "auto-connect must wake from a Chrome alarm");
   assert(source.includes("chrome.alarms.create"), "auto-connect alarm must be scheduled");
   assert(source.includes("WebSocket.CONNECTING"), "auto-connect must not reset an in-flight connection");
+  assert(source.includes("HEARTBEAT_INTERVAL_MS"), "auto-connect must keep the MV3 worker awake while connected");
+  assert(source.includes("setInterval") && source.includes("\"heartbeat\""), "auto-connect must send a socket heartbeat");
 }
 
 function assert(value, message) {
