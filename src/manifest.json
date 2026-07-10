@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Jaz Browser Bridge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Connects Jaz browser workers to this Chrome profile.",
   "icons": {
     "16": "icons/icon16.png",
